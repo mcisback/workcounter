@@ -162,13 +162,17 @@
             <div class="col">Name</div>
             <div class="col">StartDate</div>
             <div class="col">EndDate</div>
+            <div class="col">Time</div>
         </div>
 
-        {#each records as {name, startDate, endDate}}
+        {#each records as {name, startDate, endDate, hours, minutes, seconds}}
             <div class="row">
                 <div class="col">{name}</div>
                 <div class="col">{startDate}</div>
                 <div class="col">{endDate}</div>
+                <div class="col">
+                    {hours} : {minutes} : {seconds}
+                </div>
             </div>
         {/each}
     {:else}
