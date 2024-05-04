@@ -1,4 +1,8 @@
 <script>
+    // @ts-nocheck
+    // import { onMount } from 'svelte';
+    import axios from 'axios'
+
     let name = ''
     let started = false
 
@@ -8,24 +12,90 @@
 
     let count = 0
 
+    let startDate = null
+
+    /**
+	 * @type {number | null | undefined}
+	 */
     let interval = null
 
-    const start = () => {
-        let date = new Date()
+    // onMount(async () => {
+	// 	const records = await fetch(`/tutorial/api/album`);
+	// 	photos = await res.json();
+	// });
+
+    let records = []
+
+    const getRecords = () => {
+        axios.get(`/api/getcounterbyuser`, {
+            params: {
+                name
+            }
+        })
+        .then(response => {
+            records = [...response.data.records]
+        })
+
+        console.log(`Got records for user ${name}: `, records)
+    }
+
+    const toggleCounter = async () => {
+        if(name === '') {
+            alert("Missing name");
+
+            return;
+        }
 
         started = !started
 
-        console.log('Starting counter for: ', name, date)
+        if(started === true) {
+            startDate = new Date()
+            seconds = 0
+            minutes = 0
+            hours = 0
 
-        interval = setInterval(() => {
-            seconds = count % 60
-            minutes = Math.floor(count / 60)
-            hours = Math.floor(count / (60 * 60))
+            console.log('Starting counter for: ', name, startDate)
 
-            count++
+            interval = setInterval(() => {
+                seconds = count % 60
+                minutes = Math.floor(count / 60)
+                hours = Math.floor(count / (60 * 60))
 
-            console.log(hours, minutes, seconds, count)
-        }, 100)
+                if(minutes >= 60) {
+                    minutes %= 60
+                }
+
+                if(hours >= 24) {
+                    hours %= 24
+                }
+
+                count++
+
+                //console.log(hours, minutes, seconds, count)
+            }, 1000)
+        } else {
+            // @ts-ignore
+            clearInterval(interval)
+
+            axios.post('/api/savecounter', {
+                name,
+                startDate,
+                endDate: new Date(),
+                hours,
+                minutes,
+                seconds,
+            })
+            .then(response => {
+                // Trattamento del risultato positivo
+                console.log('Response:', response.data);
+            })
+            .catch(error => {
+                // Trattamento di errori
+                console.error('Error saving counter:', error);
+            });
+        }
+
+        getRecords()
     }
 </script>
 
@@ -51,7 +121,7 @@
 
     <div class="row mb-4">
 
-        <button on:click={start}>
+        <button on:click={toggleCounter}>
             {#if started === false}
                 Start Work
             {:else}
@@ -61,7 +131,7 @@
 
     </div>
 
-    {#if started === true && name !==''}
+    {#if name !==''}
         <div class="row counter">
             <div class="col-4">
                 {hours}
@@ -85,6 +155,24 @@
                 S
             </div>
         </div>
+    {/if}
+
+    {#if records.length > 0}
+        <div class="row mb-3">
+            <div class="col">Name</div>
+            <div class="col">StartDate</div>
+            <div class="col">EndDate</div>
+        </div>
+
+        {#each records as {name, startDate, endDate}}
+            <div class="row">
+                <div class="col">{name}</div>
+                <div class="col">{startDate}</div>
+                <div class="col">{endDate}</div>
+            </div>
+        {/each}
+    {:else}
+            <b>No records yet for this user</b>
     {/if}
 </div>
 
